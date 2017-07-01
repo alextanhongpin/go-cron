@@ -15,9 +15,18 @@ import (
 	"github.com/alextanhongpin/go-cron/cron"
 )
 
-var c *cron.Task
-var a auth.Auth
+type Message struct {
+	Event string `json:"event"`
+}
 
+type Request struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
+	Spec     string `json:"spec,omitempty"`
+}
+
+var c *cron.Task
+var a *auth.Auth
 var t *template.Template
 
 // The job to be executed. This is where you place your logic
@@ -37,14 +46,11 @@ func main() {
 	)
 	flag.Parse()
 
-	t = template.Must(template.ParseFiles("templates/index.html"))
-
-	a.SetupBasicAuth("john.doe", "123456")
-
-	c = cron.New()
-	c.Spec = *spec
+	c = cron.New(*spec)
 	c.Cron.AddFunc(c.Spec, job)
 	c.Start()
+	a = auth.New("john.doe", "123456")
+	t = template.Must(template.ParseFiles("templates/index.html"))
 
 	if *run == true {
 		// Run once
@@ -53,10 +59,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		c.Update()
-		t.Execute(w, c)
-	})
+	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/crons", cronHandler)
 	mux.HandleFunc("/crons/start", startHandler)
 	mux.HandleFunc("/crons/stop", stopHandler)
@@ -66,28 +69,47 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), mux))
 }
 
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	c.Update()
+	t.Execute(w, c)
+}
+
 func startHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not supported", http.StatusMethodNotAllowed)
 		return
 	}
-	err := a.EncodeAuthFromRequest(r)
+	var req Request
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	err = a.Authorize(req.Username, req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	c.Start()
 	c.Update()
 	json.NewEncoder(w).Encode(c)
 }
+
 func stopHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not supported", http.StatusMethodNotAllowed)
 		return
 	}
-	err := a.EncodeAuthFromRequest(r)
+	var req Request
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = a.Authorize(req.Username, req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 	c.Stop()
@@ -108,18 +130,18 @@ func cronHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(c)
 		break
 	case "POST":
-		err := a.EncodeAuthFromRequest(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		s := r.URL.Query().Get("spec")
+		var req Request
+		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		err = c.ParseSpec(s)
+		err = a.Authorize(req.Username, req.Password)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		err = c.ParseSpec(req.Spec)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -127,8 +149,7 @@ func cronHandler(w http.ResponseWriter, r *http.Request) {
 
 		c.Stop()
 		c = nil
-		c = cron.New()
-		c.Spec = s
+		c = cron.New(req.Spec)
 		c.Cron.AddFunc(c.Spec, job)
 		c.Start()
 
@@ -151,10 +172,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	go echo(conn)
 }
 
-type Message struct {
-	Event string `json:"event"`
-}
-
 func echo(conn *websocket.Conn) {
 	for {
 		m := Message{}
@@ -165,7 +182,6 @@ func echo(conn *websocket.Conn) {
 		}
 
 		if m.Event == "tick" {
-			fmt.Printf("Got message: %#v\n", m)
 			c.Update()
 			if err = conn.WriteJSON(c); err != nil {
 				fmt.Println(err)

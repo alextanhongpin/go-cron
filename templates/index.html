@@ -31,9 +31,9 @@
                 text-align: center;
             }
             .clock {
-                border: 5px solid rgba(0,0,0,.25);
-                display: inline-block;
-                padding: 10px 20px;
+                background: rgba(0,0,0,.1);
+                height: 120px;
+                line-height: 120px;
             }
 
             .is-green {
@@ -45,6 +45,32 @@
             .is-red {
                 color: red;
             }
+
+
+            #prev, #next {
+                font-size: 20px;
+                color: #666666;
+            }
+
+            .duration {
+                display: -webkit-box;
+                display: -webkit-flex;
+                display: flex;
+                justify-content: space-around;
+            }
+            .prev, .next {
+                border: 1px solid rgba(0,0,0,.1);
+                width: 100%;
+                padding: 10px;
+                text-align: center;
+            }
+            .is-running {
+                width: 20px;
+                height: 20px;
+                background: green;
+                display: inline-block;
+                border-radius: 50%;
+            }
         </style>
     </head>
 
@@ -53,17 +79,27 @@
         <header>
             <h1>Go-Cron</h1>
         </header>
-        <br>
-        <main>
+
 
             <div class="clock-wrapper">
                 <div class="clock"><span id="current">0.00</span></div>
             </div>
-            <div>Prev Execution Time: <span id="prev">{{ .PrevExecution }}</span></div>
-            <div>Next Execution Time: <span id="next">{{ .NextExecution }}</span></div>
+        <main>
+
+
+            <div class="duration">
+                <div class="prev">
+                    <b>Prev:</b>
+                    <div id="prev">{{ .PrevExecution }}</div>
+                </div>
+                <div class="next">
+                    <b>Next:</b>
+                    <div id="next">{{ .NextExecution }}</div>
+                </div>
+            </div>
             <div>Start Time: <span id="start">{{ .StartTime }}</span></div>
             <div>IsExecuting: <span id="executing">{{ .IsExecuting }}</span></div>
-            <div>IsRunning: <span id="running">{{ .IsRunning }}</span></div>
+            <div>IsRunning: <span id="running" class="{{ .IsRunning }}"></span></div>
             <div>Version: <span id="version">{{ .Version }}</span></div>
             <div>Counter: <span id="counter">{{ .Counter }}</span></div>
             <div>JobName: <span id="name">{{ .JobName }}</span></div>
@@ -140,7 +176,7 @@
                         return
                     }
                     c = 0
-                    ws.send(JSON.stringify({ Event: "tick" }))
+                    ws.send(JSON.stringify({ event: "tick" }))
                 // optional 2nd arg: elem containing the animation
                 })
 
@@ -179,7 +215,11 @@
 
                         start.innerHTML = data.start_time
                         executing.innerHTML = data.is_executing
-                        running.innerHTML = data.is_running
+                        if (data.is_running) {
+                            running.classList.add('is-running')
+                        } else {
+                            running.classList.remove('is-running')
+                        }
                         version.innerHTML = data.version
                         counter.innerHTML = data.counter
                         name.innerHTML = data.job_name
