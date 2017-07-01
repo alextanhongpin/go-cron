@@ -15,10 +15,12 @@ import (
 	"github.com/alextanhongpin/go-cron/cron"
 )
 
+// Message is the payload that the websocket passes
 type Message struct {
 	Event string `json:"event"`
 }
 
+// Request is the http request that is needed to update the cron
 type Request struct {
 	Password string `json:"password"`
 	Username string `json:"username"`
@@ -31,16 +33,23 @@ var t *template.Template
 
 // The job to be executed. This is where you place your logic
 func job() {
+
+	start := time.Now()
 	c.IsExecuting = true
+	c.JobStartTime = &start
+	c.JobEndTime = nil
 	// do something
+	time.Sleep(5 * time.Second)
 	fmt.Printf("Executing cron job at time=%v\n", time.Now())
+	end := time.Now()
+	c.JobEndTime = &end
 	c.IsExecuting = false
 	c.Counter++
 }
 
 func main() {
 	var (
-		spec = flag.String("spec", "*/10 * * * * *", "Runs every ten seconds")
+		spec = flag.String("spec", "*/20 * * * * *", "Runs every ten seconds")
 		run  = flag.Bool("run", false, "Run the cron immediately when the application starts")
 		port = flag.Int("port", 8080, "The server's port")
 	)
@@ -59,6 +68,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public"))))
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/crons", cronHandler)
 	mux.HandleFunc("/crons/start", startHandler)
@@ -136,11 +146,13 @@ func cronHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
 		err = a.Authorize(req.Username, req.Password)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
+
 		err = c.ParseSpec(req.Spec)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)

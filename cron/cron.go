@@ -14,6 +14,8 @@ type Task struct {
 	NextExecution time.Time  `json:"next_execution"`
 	StartTime     time.Time  `json:"start_time"`
 	CurrentTime   time.Time  `json:"current_time"`
+	JobStartTime  *time.Time `json:"job_start_time"`
+	JobEndTime    *time.Time `json:"job_end_time"`
 	IsExecuting   bool       `json:"is_executing"`
 	IsRunning     bool       `json:"is_running"`
 	Version       string     `json:"version"`

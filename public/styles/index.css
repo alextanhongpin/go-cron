@@ -1,0 +1,110 @@
+*, *:before, *:after {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Avenir, Arial, Helvetica, sans-serif
+}
+
+header {
+    height: 60px;
+    line-height: 60px;
+    padding: 0 20px;
+    border-bottom: 5px solid rgba(0, 0, 0, .1);
+}
+/*
+div {
+    border: 1px solid rgba(0,0,0,.1);
+}*/
+main {
+    max-width: 1140px;
+    width: 100%;
+    margin: auto;
+}
+
+.flex {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: flex;
+}
+
+.clock-wrapper {
+    flex-wrap: wrap;
+}
+.clock-wrapper > div {
+    width: 50%;
+}
+.clock {
+    font-size: 48px;
+    padding: 20px;
+    font-weight: bold;
+    border: 1px solid rgba(0,0,0,.1);
+    position: relative;
+}
+.clock-label {
+    font-size: 14px;
+    text-transform: uppercase;
+}
+.indicator {
+    padding: 20px;
+    border: 1px solid rgba(0,0,0,.1);
+}
+
+.indicator-label {
+    font-size: 14px;
+    font-weight: bold;
+}
+/*.is-green {
+    color: green;
+}
+.is-orange {
+    color: orange;
+}
+.is-red {
+    color: red;
+}*/
+
+
+.progress-bar-wrapper {
+    width: 100%;
+    border-radius: 5px;
+    overflow: hidden;
+    background: rgba(0, 0, 255, .2);
+}
+.progress-bar {
+    width: 30%;
+    height: 10px;
+    background: blue;
+    transition: .4s all ease-out;
+}
+.progress-label {
+    position: absolute;
+    left: 0%;
+    top: calc(100% - 5px);
+    margin-left: -20px;
+    font-size: 12px;
+    background: rgba(0,0,0,.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: .4s all ease-out;
+}
+.progress-label:before {
+    content: "";
+    position: absolute;
+    display: block;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid rgba(0,0,0,.8);
+    top: -5px;
+    left: 50%;
+    margin-left: -5px;
+    height: 0;
+    width: 0;
+}
+.is-pop {
+    font-size: 20px;
+    transition: .4s all ease-out;
+}

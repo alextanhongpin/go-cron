@@ -2,76 +2,7 @@
 <html>
     <head>
         <title>Go-Cron</title>
-        <style>
-            *, *:before, *:after {
-                padding: 0;
-                margin: 0;
-                box-sizing: border-box;
-            }
-
-            body {
-                font-family: Avenir, Arial, Helvetica, sans-serif
-            }
-
-            header {
-                height: 60px;
-                line-height: 60px;
-                padding: 0 20px;
-                border-bottom: 5px solid rgba(0, 0, 0, .1);
-            }
-
-            main {
-                max-width: 1140px;
-                width: 100%;
-                margin: auto;
-            }
-            .clock-wrapper {
-                font-size: 60px;
-                font-weight: bold;
-                text-align: center;
-            }
-            .clock {
-                background: rgba(0,0,0,.1);
-                height: 120px;
-                line-height: 120px;
-            }
-
-            .is-green {
-                color: green;
-            }
-            .is-orange {
-                color: orange;
-            }
-            .is-red {
-                color: red;
-            }
-
-
-            #prev, #next {
-                font-size: 20px;
-                color: #666666;
-            }
-
-            .duration {
-                display: -webkit-box;
-                display: -webkit-flex;
-                display: flex;
-                justify-content: space-around;
-            }
-            .prev, .next {
-                border: 1px solid rgba(0,0,0,.1);
-                width: 100%;
-                padding: 10px;
-                text-align: center;
-            }
-            .is-running {
-                width: 20px;
-                height: 20px;
-                background: green;
-                display: inline-block;
-                border-radius: 50%;
-            }
-        </style>
+        <link rel="stylesheet" href="../public/styles/index.css">
     </head>
 
     <body>
@@ -81,157 +12,57 @@
         </header>
 
 
-            <div class="clock-wrapper">
-                <div class="clock"><span id="current">0.00</span></div>
-            </div>
         <main>
+            <br>
+            <div class="clock-wrapper flex">
+                <div class="clock">
+                    <div class="clock-label">Current Time:</div>
+                    <div class="clock-timer" id="current">0.00</div>
 
+                    <div class="progress-label"><span id="progress"></span>%</div>
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar"></div>
+                    </div>
 
-            <div class="duration">
-                <div class="prev">
-                    <b>Prev:</b>
-                    <div id="prev">{{ .PrevExecution }}</div>
                 </div>
-                <div class="next">
-                    <b>Next:</b>
-                    <div id="next">{{ .NextExecution }}</div>
+                <div class="indicator">
+                    <div class="indicator-prev">
+                        <div class="indicator-label">Prev:</div>
+                        <div class="indicator-value" id="prev">{{ .PrevExecution }}</div>
+                    </div>
+                    <div class="indicator-next">
+                        <div class="indicator-label">Next:</div>
+                        <div class="indicator-value" id="next">{{ .NextExecution }}</div>
+                    </div>
                 </div>
             </div>
-            <div>Start Time: <span id="start">{{ .StartTime }}</span></div>
-            <div>IsExecuting: <span id="executing">{{ .IsExecuting }}</span></div>
-            <div>IsRunning: <span id="running" class="{{ .IsRunning }}"></span></div>
-            <div>Version: <span id="version">{{ .Version }}</span></div>
-            <div>Counter: <span id="counter">{{ .Counter }}</span></div>
-            <div>JobName: <span id="name">{{ .JobName }}</span></div>
-            <div>Spec: <span id="spec">{{ .Spec }}</span></div>
 
-            <div>Progress: <span id="progress"></span>%</div>
+            <br>
 
-            <button>Start</button>
-            <button>Stop</button>
-            <button>Update</button>
+            <div id="status">Offline</div>
+
+            <div id="start-exec"></div>
+            <div id="end-exec"></div>
+            <div id="info-exec"></div>
+            
+            <div class="info">
+                <div><b>Start Time:</b> <span id="start">{{ .StartTime }}</span></div>
+                <div><b>IsExecuting:</b> <span id="executing">{{ .IsExecuting }}</span></div>
+                <div><b>IsRunning:</b> <div id="status"><span id="running" class="{{ .IsRunning }}"></span></div>Running</div>
+                <div><b>Version:</b> <span id="version">{{ .Version }}</span></div>
+                <div><b>Counter:</b> <span id="counter">{{ .Counter }}</span></div>
+                <div><b>JobName:</b> <span id="name">{{ .JobName }}</span></div>
+                <div><b>Spec:</b> <span id="spec">{{ .Spec }}</span></div>
+
+                <div><b>Progress:</b> <span id="progress"></span>%</div>
+
+                <button>Start</button>
+                <button>Stop</button>
+                <button>Update</button>
+            </div>
         </main>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-            <script>
-                
-                // Cross browser, backward compatible solution
-                (function( window, Date ) {
-                // feature testing
-                    var raf = window.mozRequestAnimationFrame    ||
-                            window.webkitRequestAnimationFrame ||
-                            window.msRequestAnimationFrame     ||
-                            window.oRequestAnimationFrame;
-
-                    window.animLoop = function( render ) {
-                        
-                        var running, lastFrame = +new Date;
-                        function loop( now ) {
-                            if ( running !== false ) {
-                                raf ? raf( loop ) : setTimeout( loop, 1000 );
-                                // Make sure to use a valid time, since:
-                                // - Chrome 10 doesn't return it at all
-                                // - setTimeout returns the actual timeout
-                                now = now && now > 1E4 ? now : +new Date;
-                                var deltaT = now - lastFrame;
-                                // do not render frame when deltaT is too high
-                                if ( deltaT < 160 ) {
-                                    running = render( deltaT, now );
-                                }
-                                lastFrame = now;
-                            }
-                        }
-                        loop();
-                        return raf
-                    };
-                })( window, Date );
-
-
-                const ws = initWS()
-                let s = {
-                    isClosed: false
-                }
-                const prev = document.getElementById('prev')
-                const next = document.getElementById('next')
-                const start = document.getElementById('start')
-                const current = document.getElementById('current')
-                const executing = document.getElementById('executing')
-                const running = document.getElementById('running')
-                const version = document.getElementById('version')
-                const counter = document.getElementById('counter')
-                const name = document.getElementById('name')
-                const spec = document.getElementById('spec')
-                const progress = document.getElementById('progress')
-                // Usage
-                const throttle = 500
-                let c = 0
-                const l = animLoop(function( deltaT, now ) {
-                    if (s.isClosed) {
-                        window.cancelAnimationFrame(l);
-                        return
-                    }
-                    // rendering code goes here
-                    current.innerHTML = moment().format("hh:mm:ss")
-                    if (c <throttle) {
-                        c+=deltaT
-                        return
-                    }
-                    c = 0
-                    ws.send(JSON.stringify({ event: "tick" }))
-                // optional 2nd arg: elem containing the animation
-                })
-
-                function initWS() {
-                    const socket = new WebSocket("ws://localhost:8080/ws")
-                    socket.onopen = function() {
-                        console.info('Socket open')
-                    };
-                    socket.onmessage = function (evt) {
-                        const data = JSON.parse(evt.data)
-                        prev.innerHTML = moment(data.prev_execution).format("hh:mm:ss")
-                        next.innerHTML =  moment(data.next_execution).format("hh:mm:ss")
-
-                        const t = new Date(data.next_execution).getTime()
-                        const p  = new Date(data.prev_execution).getTime()
-                        const n = Date.now()
-                        const progressInPercent = (n - p) / (t - p) * 100 
-                        progress.innerHTML = Math.floor(progressInPercent)
-                        if (progressInPercent < 50) {
-                            progress.classList.remove('is-red')
-                            progress.classList.remove('is-green')
-                            progress.classList.remove('is-orange')
-                            progress.classList.add('is-green')
-                        } else if (progressInPercent < 75) {
-                            progress.classList.remove('is-red')
-                            progress.classList.remove('is-green')
-                            progress.classList.remove('is-orange')
-                            progress.classList.add('is-orange')
-                        } else {
-                            progress.classList.remove('is-red')
-                            progress.classList.remove('is-green')
-                            progress.classList.remove('is-orange')
-                            progress.classList.add('is-red')
-                        }
-                        
-
-                        start.innerHTML = data.start_time
-                        executing.innerHTML = data.is_executing
-                        if (data.is_running) {
-                            running.classList.add('is-running')
-                        } else {
-                            running.classList.remove('is-running')
-                        }
-                        version.innerHTML = data.version
-                        counter.innerHTML = data.counter
-                        name.innerHTML = data.job_name
-                        spec.innerHTML = data.spec
-                    }
-                    socket.onclose = function () {
-                        s.isClosed = true
-                        console.info('Socket closed')
-                    }
-                    return socket
-                }
-               
-            </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+        <script src="../public/scripts/raf-shim.js"></script>
+        <script src="../public/scripts/index.js"></script>
     </body>
 </html>
