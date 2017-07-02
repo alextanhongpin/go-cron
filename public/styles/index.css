@@ -5,106 +5,210 @@
 }
 
 body {
-    font-family: Avenir, Arial, Helvetica, sans-serif
+    font-family: Avenir, Arial, Helvetica, sans-serif;
+    background: #F4F4F4;
+    color: #444444;
 }
 
 header {
     height: 60px;
     line-height: 60px;
     padding: 0 20px;
-    border-bottom: 5px solid rgba(0, 0, 0, .1);
+    background: #1B69FF;
+    color: white;
 }
-/*
-div {
-    border: 1px solid rgba(0,0,0,.1);
-}*/
-main {
+.header {
     max-width: 1140px;
     width: 100%;
     margin: auto;
 }
 
+main {
+    max-width: 1140px;
+    width: 100%;
+    margin: auto;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+}
+
+
+.card-label {
+    color: #888888;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.p {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.5em;
+}
 .flex {
     display: -webkit-box;
     display: -webkit-flex;
     display: flex;
 }
-
-.clock-wrapper {
-    flex-wrap: wrap;
+.counter {
+    text-align: right;
+    height: 60%;
+    align-items: flex-end;
+    align-content: flex-end;
+    justify-content: flex-end;
 }
-.clock-wrapper > div {
-    width: 50%;
+.counter-value {
+    font-size: 48px;
+    font-weight: bold;
+}
+.row {
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+.row > div {
+    width: calc(50% - 10px);
 }
 .clock {
-    font-size: 48px;
-    padding: 20px;
-    font-weight: bold;
-    border: 1px solid rgba(0,0,0,.1);
     position: relative;
 }
 .clock-label {
     font-size: 14px;
-    text-transform: uppercase;
+}
+.clock-timer {
+    font-weight: bold;
+    font-size: 48px;
 }
 .indicator {
     padding: 20px;
-    border: 1px solid rgba(0,0,0,.1);
 }
 
 .indicator-label {
     font-size: 14px;
     font-weight: bold;
 }
-/*.is-green {
-    color: green;
-}
-.is-orange {
-    color: orange;
-}
-.is-red {
-    color: red;
-}*/
 
 
 .progress-bar-wrapper {
     width: 100%;
-    border-radius: 5px;
-    overflow: hidden;
-    background: rgba(0, 0, 255, .2);
+    border-radius: 3px;
+    position: relative;
+    background: #BED4FF;
 }
 .progress-bar {
-    width: 30%;
-    height: 10px;
-    background: blue;
+    width: 0%;
+    height: 15px;
+    background: #1B69FF;
     transition: .4s all ease-out;
+    border-radius: 3px;
 }
 .progress-label {
     position: absolute;
     left: 0%;
-    top: calc(100% - 5px);
-    margin-left: -20px;
+    bottom: calc(100% + 10px);
     font-size: 12px;
+    margin-left: -20px;
     background: rgba(0,0,0,.8);
     color: white;
-    padding: 5px 10px;
+    height: 20px;
+    line-height: 20px;
     border-radius: 5px;
     transition: .4s all ease-out;
+    width: 40px;
+    text-align: center;
 }
+
 .progress-label:before {
     content: "";
     position: absolute;
     display: block;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px solid rgba(0,0,0,.8);
-    top: -5px;
+    border-top: 5px solid rgba(0,0,0,.8);
+    top: 100%;
     left: 50%;
     margin-left: -5px;
     height: 0;
     width: 0;
 }
+.progress-roadmap {
+    font-size: 16px;
+    justify-content: space-between;
+}
 .is-pop {
     font-size: 20px;
     transition: .4s all ease-out;
+}
+
+.bullet-row {
+    vertical-align: middle;
+}
+.bullet-row > div {
+    vertical-align: middle;
+}
+
+.bullet {
+    height: 15px;
+    width: 15px;
+    display: inline-block;
+    border-radius: 10px;
+}
+.bullet--stop,
+.bullet--run {
+    background: #CCCCCC;
+}
+.bullet-row.is-active .bullet--stop {
+    background: #FF4444;
+}
+.bullet-row.is-active .bullet--run {
+    background: #6DEF8D;
+}
+.bullet-label {
+    display: inline-block;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 15px;
+    opacity: 0.5;
+}
+.bullet-row.is-active .bullet-label {
+    opacity: 1;
+}
+
+.button-toggle-wrapper {
+    background: #CCCCCC;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    border-radius: 12px;
+    position: relative;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, .4);
+}
+.button-toggle-wrapper.is-active {
+    background: #6DEF8D;
+}
+
+.button-toggle {
+    background: white;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, .4);
+    height: 30px;
+    width: 30px;
+    position: absolute;
+    top: -3px;
+    left: 0;
+    border-radius: 50%;
+    transition: .174s all cubic-bezier(0.23, 2, 0.320, 1);
+}
+.button-toggle-wrapper.is-active .button-toggle {
+    left: 50%;
+}
+
+#status {
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: bold;
+}
+.status-label {
+    color: #888888;
 }

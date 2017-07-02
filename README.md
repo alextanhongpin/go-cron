@@ -2,8 +2,9 @@
 
 Simple cron API with UI to monitor your cron application.
 
-![App](./assets/main.png)
-
+![Version 1](./assets/main.png)
+![Version 2](./assets/main.v2.png)
+![GIF Animation](./assets/out.gif)
 
 ## Update the cron specs
 

@@ -3,6 +3,7 @@
 
   // SocketModel is the websocket model
   const Model = {
+    ids: ['prev', 'next', 'start', 'current', 'executing', 'running', 'version', 'counter', 'name', 'spec', 'progress', 'status', 'start-exec', 'end-exec', 'info-exec'],
     isClosed: false, // Bool to check if the socket is closed
     counter: 0, // Int that records the time
     throttle: 500, // Int in milliseconds the time to debounce the request animation frame
@@ -14,44 +15,186 @@
     },
     reset () {
       this.counter = 0
+      this.data.job_start_time = null
+      this.data.job_end_time = null
+      this.data.prev_execution = null
+      this.data.next_execution = null
+    },
+    data: {},
+    getProgressPercentage () {
+      if (!this.data.prev_execution || !this.data.prev_execution) {
+        return '0%'
+      }
+      const prevExecutionTime = this.formatTime(this.data.prev_execution)
+
+      if (prevExecutionTime.trim() === '08:00:00 am') {
+        return '0%'
+      }
+      const a = new Date(this.data.prev_execution).getTime()
+      const b = new Date(this.data.next_execution).getTime()
+      const c = Date.now()
+      return this.toPercentage(Math.ceil((c - a) / (b - a) * 100))
+    },
+    getJobDuration () {
+      const start = this.data.job_start_time
+      const end = this.data.job_end_time
+
+      const seconds = (new Date(end).getTime() - new Date(start).getTime()) / 1000
+      if (!seconds) {
+        return 'N/A'
+      }
+      // Can I convert it to minutes?
+      const minutes = Math.floor(seconds / 60)
+      if (minutes > 1) {
+        return `${minutes}min ${seconds}s`
+      }
+      const hours = Math.floor(seconds / (60 * 60))
+      if (hours > 1) {
+        return `${hours}hr ${minutes}min ${seconds}s`
+      }
+      return `${seconds}s`
+    },
+    formatTime (time) {
+      if (!time) {
+        return '-'
+      }
+      return moment(time).format('hh:mm:ss a')
+    },
+    toPercentage (value) {
+      return `${value}%`
     }
   }
 
   const View = {
     el: {},
-    ids: ['prev', 'next', 'start', 'current', 'executing', 'running', 'version', 'counter', 'name', 'spec', 'progress', 'status', 'start-exec', 'end-exec', 'info-exec'],
-    find () {
-      this.ids.forEach((id) => {
-        this.el[id] = document.getElementById(id)
-      })
+    findId (el, id) {
+      this.el[el] = document.getElementById(id)
     },
-    query (el, className) {
+    findClass (el, className) {
       this.el[el] = document.querySelector(className)
+    },
+    query (el) {
+      return this.el[el]
     },
     setStatus (message) {
       this.el.status.innerHTML = message
     }
   }
 
-  View.find()
+  const Controller = (model, view) => {
+    return {
+      // Throttles the request animation frame
+      throttle (delta) {
+        if (model.isThrottled()) {
+          model.increment(delta)
+          return
+        }
+        model.reset()
+      },
+      setView (el, content) {
+        view.el[el].innerHTML = content
+      },
+      init () {
+        // Add existing class
+        view.findClass('progress-bar', '.progress-bar')
+        view.findClass('progress-label', '.progress-label')
+        view.findClass('toggle', '.button-toggle-wrapper')
+        view.findClass('bullet-start', '.bullet-row--start')
+        view.findClass('bullet-stop', '.bullet-row--stop')
 
-  View.query('progress-bar', '.progress-bar')
-  View.query('progress-label', '.progress-label')
+        // Search for all the id
+        model.ids.forEach((id) => {
+          view.findId(id, id)
+        })
+
+        this.bindEvents()
+      },
+      setData (data) {
+        model.data = data
+      },
+
+      _setProgressLabelPosition () {
+        view.query('progress-label').style.left = model.data.progressInPercent
+      },
+      _setProgressBarWidth () {
+        view.query('progress-bar').style.width = model.data.progressInPercent
+      },
+      _setProgressCounter () {
+        view.setView('progress', model.data.progressInPercent)
+      },
+      updateProgressView () {
+        const progress = model.getProgressPercentage()
+        this.setView('progress', progress)
+        view.query('progress-bar').style.width = progress
+        view.query('progress-label').style.left = progress
+      },
+      updateTimerView () {
+        const prevExecutionTime = model.formatTime(model.data.prev_execution)
+
+        if (prevExecutionTime.trim() === '08:00:00 am') {
+          this.setView('prev', 'N/A')
+        } else {
+          this.setView('prev', prevExecutionTime)
+        }
+        this.setView('next', model.formatTime(model.data.next_execution))
+        this.setView('start', model.formatTime(model.data.start_time))
+      },
+      updateClockView () {
+        this.setView('current', model.formatTime(new Date()))
+      },
+      updateCronStatusView () {
+        const stop = view.query('bullet-stop')
+        const start = view.query('bullet-start')
+        stop.classList.remove('is-active')
+        start.classList.remove('is-active')
+
+        if (model.data.is_executing) {
+          start.classList.add('is-active')
+        } else {
+          stop.classList.add('is-active')
+        }
+
+        this.setView('info-exec', model.getJobDuration())
+        this.setView('start-exec', model.formatTime(model.data.job_start_time))
+        this.setView('end-exec', model.formatTime(model.data.job_end_time))
+      },
+      bindEvents () {
+        view.query('toggle').addEventListener('click', (evt) => {
+          const target = evt.currentTarget
+          model.enabled = !target.classList.contains('is-active')
+          target.classList.toggle('is-active')
+
+          const targetUrl = model.enabled ? '/crons/start' : '/crons/stop'
+          window.fetch(targetUrl, {
+            method: 'post',
+            body: JSON.stringify({
+              username: 'john.doe',
+              password: '123456'
+            })
+          }).then((body) => {
+            return body.json()
+          }).then((data) => {
+            console.log(data)
+          }).catch((error) => {
+            console.log(error)
+          })
+        }, false)
+      }
+    }
+  }
+
+  const controller = Controller(Model, View)
+  controller.init()
 
   // Usage
-
-  const anim = window.animLoop(function (delta, now) {
+  let loop = null
+  loop = window.animLoop(function (delta, now) {
     if (Model.isClosed) {
-      window.cancelAnimationFrame(anim)
-      return
+      return loop && window.cancelAnimationFrame(loop)
     }
         // rendering code goes here
-    View.el.current.innerHTML = moment().format('hh:mm:ss')
-    if (Model.isThrottled()) {
-      Model.increment(delta)
-      return
-    }
-    Model.reset()
+    controller.throttle(delta)
+    controller.updateClockView()
     ws.send(JSON.stringify({ event: 'tick' }))
   })
 
@@ -62,70 +205,42 @@
     }
     const socket = new window.WebSocket('ws://localhost:8080/ws')
     socket.onopen = function () {
-      View.setStatus('Connected')
+      controller.setView('status', 'Connected')
     }
     socket.onmessage = function (evt) {
       const data = JSON.parse(evt.data)
-      const {
-        job_start_time,
-        job_end_time
-      } = data
 
-      View.el.prev.innerHTML = moment(data.prev_execution).format('hh:mm:ss')
-      View.el.next.innerHTML = moment(data.next_execution).format('hh:mm:ss')
-
-      const t = new Date(data.next_execution).getTime()
-      const p = new Date(data.prev_execution).getTime()
-      const n = Date.now()
-      const progressInPercent = (n - p) / (t - p) * 100
-
-      const progressEl = View.el.progress
-
-      View.el['progress-bar'].style.width = Math.ceil(progressInPercent) + '%'
-      View.el['progress-label'].style.left = Math.ceil(progressInPercent) + '%'
-
-      progressEl.innerHTML = Math.ceil(progressInPercent)
-      console.log(progressInPercent)
-
-      if (progressInPercent < 50) {
-        progressEl.classList.remove('is-red')
-        progressEl.classList.remove('is-green')
-        progressEl.classList.remove('is-orange')
-        progressEl.classList.add('is-green')
-      } else if (progressInPercent < 75) {
-        progressEl.classList.remove('is-red')
-        progressEl.classList.remove('is-green')
-        progressEl.classList.remove('is-orange')
-        progressEl.classList.add('is-orange')
-      } else {
-        progressEl.classList.remove('is-red')
-        progressEl.classList.remove('is-green')
-        progressEl.classList.remove('is-orange')
-        progressEl.classList.add('is-red')
+      if (!data.is_running) {
+        controller.setData({})
+        controller.updateTimerView()
+        controller.updateProgressView()
+        controller.updateCronStatusView()
+        return
       }
+      controller.setData(data)
+      controller.updateTimerView()
+      controller.updateProgressView()
+      controller.updateCronStatusView()
 
-      View.el.start.innerHTML = data.start_time
-      View.el.executing.innerHTML = data.is_executing
-      console.log(data)
-      if (data.is_running) {
-        View.setStatus('Running')
-        View.el.running.classList.add('is-running')
-      } else {
-        View.setStatus('Waiting')
-        View.el.running.classList.remove('is-running')
-      }
-      if (data.is_executing) {
-        View.setStatus('Executing')
-        View.el.status.classList.add('is-pop')
-      } else {
-        View.el.status.classList.remove('is-pop')
-      }
+      // if (data.is_running) {
+      //   View.setStatus('Running')
+      //   View.el.running.classList.add('is-running')
+      // } else {
+      //   View.setStatus('Waiting')
+      //   View.el.running.classList.remove('is-running')
+      // }
+      // if (data.is_executing) {
+      //   View.setStatus('Executing')
+      //   View.el.status.classList.add('is-pop')
+      // } else {
+      //   View.el.status.classList.remove('is-pop')
+      // }
 
-      const timeTakenForJob = new Date(job_end_time).getTime() - new Date(job_start_time).getTime()
+      // const timeTakenForJob = new Date(job_end_time).getTime() - new Date(job_start_time).getTime()
 
-      View.el['start-exec'].innerHTML = data.job_start_time
-      View.el['end-exec'].innerHTML = data.job_end_time
-      View.el['info-exec'].innerHTML = Math.floor(timeTakenForJob / 1000) + 's'
+      // View.el['start-exec'].innerHTML = data.job_start_time
+      // View.el['end-exec'].innerHTML = data.job_end_time
+      // View.el['info-exec'].innerHTML = Math.floor(timeTakenForJob / 1000) + 's'
       View.el.version.innerHTML = data.version
       View.el.counter.innerHTML = data.counter
       View.el.name.innerHTML = data.job_name
@@ -137,6 +252,13 @@
       console.info('Socket closed')
 
       View.setStatus('Disconnected')
+      Model.reset()
+      controller.setData({})
+      controller.updateTimerView()
+      controller.updateProgressView()
+      controller.updateCronStatusView()
+      // Reset Model
+      // Model.data.
     }
     return socket
   }

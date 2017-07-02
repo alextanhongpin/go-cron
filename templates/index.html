@@ -8,57 +8,101 @@
     <body>
 
         <header>
-            <h1>Go-Cron</h1>
+            <div class="header">
+                <h2>GO-CRON</h2>
+            </div>
         </header>
 
 
         <main>
-            <br>
-            <div class="clock-wrapper flex">
-                <div class="clock">
-                    <div class="clock-label">Current Time:</div>
+            <div class="row flex">
+                <div class="clock card">
+                    <div class="clock-label card-label">Current Time</div>
                     <div class="clock-timer" id="current">0.00</div>
 
-                    <div class="progress-label"><span id="progress"></span>%</div>
+                    <br>
+                    <br>
+
                     <div class="progress-bar-wrapper">
+                        <div class="progress-label"><span id="progress"></span></div>
                         <div class="progress-bar"></div>
+                    </div>
+                    <br>
+
+                    <div class="progress-roadmap flex">
+                        <div>
+                            <div class="card-label">START</div>
+                            <div class="p" id="prev">{{ .PrevExecution }}</div>
+                        </div>
+                        <div>
+                            <div class="card-label">END</div>
+                            <div class="p" id="next">{{ .NextExecution }}</div>
+                        </div>
                     </div>
 
                 </div>
-                <div class="indicator">
-                    <div class="indicator-prev">
-                        <div class="indicator-label">Prev:</div>
-                        <div class="indicator-value" id="prev">{{ .PrevExecution }}</div>
-                    </div>
-                    <div class="indicator-next">
-                        <div class="indicator-label">Next:</div>
-                        <div class="indicator-value" id="next">{{ .NextExecution }}</div>
+
+                <div class="card indicator">
+                    <div class="card-label">Number of Executions</div>
+                    
+                    <br>
+
+                    <div class="p">The number of times your cron job has executed.</div>
+
+                    <div class="counter flex">
+                        <div class="counter-value" id="counter">{{ .Counter }}</div>
                     </div>
                 </div>
             </div>
 
             <br>
 
-            <div id="status">Offline</div>
+            <div class="row flex">
 
-            <div id="start-exec"></div>
-            <div id="end-exec"></div>
-            <div id="info-exec"></div>
-            
-            <div class="info">
-                <div><b>Start Time:</b> <span id="start">{{ .StartTime }}</span></div>
-                <div><b>IsExecuting:</b> <span id="executing">{{ .IsExecuting }}</span></div>
-                <div><b>IsRunning:</b> <div id="status"><span id="running" class="{{ .IsRunning }}"></span></div>Running</div>
-                <div><b>Version:</b> <span id="version">{{ .Version }}</span></div>
-                <div><b>Counter:</b> <span id="counter">{{ .Counter }}</span></div>
-                <div><b>JobName:</b> <span id="name">{{ .JobName }}</span></div>
-                <div><b>Spec:</b> <span id="spec">{{ .Spec }}</span></div>
+                <div class="card">
+                    <div class="card-label">Cron Job</div>
+                    
+                    <br>
+                    
+                    <div class="p">
+                        <div>Job started at <b id="start-exec">{{ .JobStartTime }}</b>.</div>
+                        <div>Job ended at <b id="end-exec">{{ .JobEndTime }}</b>.</div>
+                        <div>Time taken for the execution is <b id="info-exec">0</b>.</div>
+                    </div>
 
-                <div><b>Progress:</b> <span id="progress"></span>%</div>
+                    <br>    
 
-                <button>Start</button>
-                <button>Stop</button>
-                <button>Update</button>
+                    <div>
+                        <div class="bullet-row is-active bullet-row--stop"><div class="bullet bullet--stop"></div>&nbsp;&nbsp;&nbsp;<div class="bullet-label">Stopped</div></div>
+                        
+                        <br>
+
+                        <div class="bullet-row bullet-row--start"><div class="bullet bullet--run"></div>&nbsp;&nbsp;&nbsp;<div class="bullet-label">Running</div></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-label">Cron Info</div>
+                    
+                    <br>
+                    
+                    <div class="p">
+                        <div>Started <b id="name">{{ .JobName }}</b> version <b id="version">{{ .Version }}</b>  at <b id="start">{{ .StartTime }}</b>.</div>
+                        <div>Specification is <b id="spec">{{ .Spec }}</b></div>
+                    </div>
+
+                    <br>
+
+                    <div>
+                        <div> <span class="p status-label">Status:</span> <span id="status"></span></div>
+
+                        <br>
+
+                        <div class="button-toggle-wrapper is-active">
+                            <div class="button-toggle"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
