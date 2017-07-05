@@ -38,6 +38,7 @@ func job() {
 	c.IsExecuting = true
 	c.JobStartTime = &start
 	c.JobEndTime = nil
+	c.IsTriggered = true
 	// do something
 	time.Sleep(5 * time.Second)
 	fmt.Printf("Executing cron job at time=%v\n", time.Now())
@@ -49,7 +50,7 @@ func job() {
 
 func main() {
 	var (
-		spec = flag.String("spec", "*/20 * * * * *", "Runs every ten seconds")
+		spec = flag.String("spec", "*/10 * * * * *", "Runs every ten seconds")
 		run  = flag.Bool("run", false, "Run the cron immediately when the application starts")
 		port = flag.Int("port", 8080, "The server's port")
 	)
@@ -190,7 +191,10 @@ func echo(conn *websocket.Conn) {
 
 		err := conn.ReadJSON(&m)
 		if err != nil {
-			fmt.Println("Error reading json.", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+				log.Printf("error: %v", err)
+			}
+			return
 		}
 
 		if m.Event == "tick" {

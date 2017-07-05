@@ -3,57 +3,122 @@
 
   // SocketModel is the websocket model
   const Model = {
-    ids: ['prev', 'next', 'start', 'current', 'executing', 'running', 'version', 'counter', 'name', 'spec', 'progress', 'status', 'start-exec', 'end-exec', 'info-exec'],
-    isClosed: false, // Bool to check if the socket is closed
-    counter: 0, // Int that records the time
-    throttle: 500, // Int in milliseconds the time to debounce the request animation frame
-    isThrottled () {
-      return this.counter < this.throttle
+    state: {
+      ids: ['prev', 'next', 'start', 'current', 'executing', 'running', 'version', 'counter', 'name', 'spec', 'progress', 'status', 'start-exec', 'end-exec', 'info-exec'],
+      isClosed: false,
+      counter: 0,
+      throttleDuration: 500
     },
-    increment (value) {
-      this.counter += value
+    set (key, value) {
+      this.state[key] = value
     },
-    reset () {
-      this.counter = 0
-      this.data.job_start_time = null
-      this.data.job_end_time = null
-      this.data.prev_execution = null
-      this.data.next_execution = null
+    get (key) {
+      return this.state[key]
     },
-    data: {},
-    getProgressPercentage () {
-      if (!this.data.prev_execution || !this.data.prev_execution) {
-        return '0%'
-      }
-      const prevExecutionTime = this.formatTime(this.data.prev_execution)
+    update (obj) {
+      this.state = Object.assign({}, this.state, obj)
+    },
+    computed () {
+      return {
+        isThrottled: () => {
+          return this.get('counter') - this.get('throttle')
+        },
+        increment: () => {
+          return this.get('counter') < this.get('throttle')
+        },
+        getProgressPercentage: () => {
+          const prev = this.get('prev_execution')
+          const next = this.get('next_execution')
+          if (!prev || !next) {
+            return '0%'
+          }
+          const prevExecutionTime = this.formatTime(prev)
 
-      if (prevExecutionTime.trim() === '08:00:00 am') {
-        return '0%'
-      }
-      const a = new Date(this.data.prev_execution).getTime()
-      const b = new Date(this.data.next_execution).getTime()
-      const c = Date.now()
-      return this.toPercentage(Math.ceil((c - a) / (b - a) * 100))
-    },
-    getJobDuration () {
-      const start = this.data.job_start_time
-      const end = this.data.job_end_time
+          if (prevExecutionTime.trim() === '08:00:00 am') {
+            return '0%'
+          }
+          const a = new Date(prev).getTime()
+          const b = new Date(next).getTime()
+          const c = Date.now()
+          return this.toPercentage(Math.ceil((c - a) / (b - a) * 100))
+        },
+        getJobDuration: () => {
+          const start = this.get('job_start_time')
+          const end = this.get('job_end_time')
 
-      const seconds = (new Date(end).getTime() - new Date(start).getTime()) / 1000
-      if (!seconds) {
-        return 'N/A'
-      }
+          const seconds = (new Date(end).getTime() - new Date(start).getTime()) / 1000
+          if (!seconds) {
+            return 'N/A'
+          }
       // Can I convert it to minutes?
-      const minutes = Math.floor(seconds / 60)
-      if (minutes > 1) {
-        return `${minutes}min ${seconds}s`
+          const minutes = Math.floor(seconds / 60)
+          if (minutes > 1) {
+            return `${minutes}min ${seconds}s`
+          }
+          const hours = Math.floor(seconds / (60 * 60))
+          if (hours > 1) {
+            return `${hours}hr ${minutes}min ${seconds}s`
+          }
+          return `${seconds}s`
+        }
       }
-      const hours = Math.floor(seconds / (60 * 60))
-      if (hours > 1) {
-        return `${hours}hr ${minutes}min ${seconds}s`
-      }
-      return `${seconds}s`
     },
+    // ids: ['prev', 'next', 'start', 'current', 'executing', 'running', 'version', 'counter', 'name', 'spec', 'progress', 'status', 'start-exec', 'end-exec', 'info-exec'],
+    // isClosed: false, // Bool to check if the socket is closed
+    // counter: 0, // Int that records the time
+    // throttle: 500, // Int in milliseconds the time to debounce the request animation frame
+    // isThrottled () {
+    //   return this.counter < this.throttle
+    // },
+    // increment (value) {
+    //   this.counter += value
+    // },
+    reset () {
+      // this.counter = 0
+      // this.data.job_start_time = null
+      // this.data.job_end_time = null
+      // this.data.prev_execution = null
+      // this.data.next_execution = null
+      this.set('counter', 0)
+      this.set('job_start_time', null)
+      this.set('job_end_time', null)
+      this.set('prev_execution', null)
+      this.set('next_execution', null)
+    },
+    // data: {},
+    // getProgressPercentage () {
+    //   if (!this.data.prev_execution || !this.data.prev_execution) {
+    //     return '0%'
+    //   }
+    //   const prevExecutionTime = this.formatTime(this.data.prev_execution)
+
+    //   if (prevExecutionTime.trim() === '08:00:00 am') {
+    //     return '0%'
+    //   }
+    //   const a = new Date(this.data.prev_execution).getTime()
+    //   const b = new Date(this.data.next_execution).getTime()
+    //   const c = Date.now()
+    //   return this.toPercentage(Math.ceil((c - a) / (b - a) * 100))
+    // },
+    // getJobDuration () {
+    //   const start = this.data.job_start_time
+    //   const end = this.data.job_end_time
+
+    //   const seconds = (new Date(end).getTime() - new Date(start).getTime()) / 1000
+    //   if (!seconds) {
+    //     return 'N/A'
+    //   }
+    //   // Can I convert it to minutes?
+    //   const minutes = Math.floor(seconds / 60)
+    //   if (minutes > 1) {
+    //     return `${minutes}min ${seconds}s`
+    //   }
+    //   const hours = Math.floor(seconds / (60 * 60))
+    //   if (hours > 1) {
+    //     return `${hours}hr ${minutes}min ${seconds}s`
+    //   }
+    //   return `${seconds}s`
+    // },
     formatTime (time) {
       if (!time) {
         return '-'
@@ -85,8 +150,8 @@
     return {
       // Throttles the request animation frame
       throttle (delta) {
-        if (model.isThrottled()) {
-          model.increment(delta)
+        if (model.computed().isThrottled()) {
+          model.computed().increment(delta)
           return
         }
         model.reset()
@@ -103,41 +168,33 @@
         view.findClass('bullet-stop', '.bullet-row--stop')
 
         // Search for all the id
-        model.ids.forEach((id) => {
+        model.get('ids').forEach((id) => {
           view.findId(id, id)
         })
 
         this.bindEvents()
       },
       setData (data) {
-        model.data = data
+        // model.data = data
+        model.update(data)
       },
 
-      _setProgressLabelPosition () {
-        view.query('progress-label').style.left = model.data.progressInPercent
-      },
-      _setProgressBarWidth () {
-        view.query('progress-bar').style.width = model.data.progressInPercent
-      },
-      _setProgressCounter () {
-        view.setView('progress', model.data.progressInPercent)
-      },
       updateProgressView () {
-        const progress = model.getProgressPercentage()
+        const progress = model.computed().getProgressPercentage()
         this.setView('progress', progress)
         view.query('progress-bar').style.width = progress
         view.query('progress-label').style.left = progress
       },
       updateTimerView () {
-        const prevExecutionTime = model.formatTime(model.data.prev_execution)
+        const prevExecutionTime = model.formatTime(model.get('prev_execution'))
 
         if (prevExecutionTime.trim() === '08:00:00 am') {
           this.setView('prev', 'N/A')
         } else {
           this.setView('prev', prevExecutionTime)
         }
-        this.setView('next', model.formatTime(model.data.next_execution))
-        this.setView('start', model.formatTime(model.data.start_time))
+        this.setView('next', model.formatTime(model.get('next_execution')))
+        this.setView('start', model.formatTime(model.get('start_time')))
       },
       updateClockView () {
         this.setView('current', model.formatTime(new Date()))
@@ -148,23 +205,23 @@
         stop.classList.remove('is-active')
         start.classList.remove('is-active')
 
-        if (model.data.is_executing) {
+        if (model.get('is_executing')) {
           start.classList.add('is-active')
         } else {
           stop.classList.add('is-active')
         }
 
-        this.setView('info-exec', model.getJobDuration())
-        this.setView('start-exec', model.formatTime(model.data.job_start_time))
-        this.setView('end-exec', model.formatTime(model.data.job_end_time))
+        this.setView('info-exec', model.computed().getJobDuration())
+        this.setView('start-exec', model.formatTime(model.get('job_start_time')))
+        this.setView('end-exec', model.formatTime(model.get('job_end_time')))
       },
       bindEvents () {
         view.query('toggle').addEventListener('click', (evt) => {
           const target = evt.currentTarget
-          model.enabled = !target.classList.contains('is-active')
+          model.set('enabled', !target.classList.contains('is-active'))
           target.classList.toggle('is-active')
 
-          const targetUrl = model.enabled ? '/crons/start' : '/crons/stop'
+          const targetUrl = model.get('enabled') ? '/crons/start' : '/crons/stop'
           window.fetch(targetUrl, {
             method: 'post',
             body: JSON.stringify({
@@ -179,6 +236,18 @@
             console.log(error)
           })
         }, false)
+      },
+      updateEmptyInfoView () {
+        this.setData({})
+        this.updateTimerView()
+        this.updateProgressView()
+        this.updateCronStatusView()
+      },
+      updateInfoView (data) {
+        this.setData(data)
+        this.updateTimerView()
+        this.updateProgressView()
+        this.updateCronStatusView()
       }
     }
   }
@@ -189,7 +258,7 @@
   // Usage
   let loop = null
   loop = window.animLoop(function (delta, now) {
-    if (Model.isClosed) {
+    if (Model.get('isClosed')) {
       return loop && window.cancelAnimationFrame(loop)
     }
         // rendering code goes here
@@ -211,54 +280,19 @@
       const data = JSON.parse(evt.data)
 
       if (!data.is_running) {
-        controller.setData({})
-        controller.updateTimerView()
-        controller.updateProgressView()
-        controller.updateCronStatusView()
+        controller.updateEmptyInfoView()
         return
       }
-      controller.setData(data)
-      controller.updateTimerView()
-      controller.updateProgressView()
-      controller.updateCronStatusView()
-
-      // if (data.is_running) {
-      //   View.setStatus('Running')
-      //   View.el.running.classList.add('is-running')
-      // } else {
-      //   View.setStatus('Waiting')
-      //   View.el.running.classList.remove('is-running')
-      // }
-      // if (data.is_executing) {
-      //   View.setStatus('Executing')
-      //   View.el.status.classList.add('is-pop')
-      // } else {
-      //   View.el.status.classList.remove('is-pop')
-      // }
-
-      // const timeTakenForJob = new Date(job_end_time).getTime() - new Date(job_start_time).getTime()
-
-      // View.el['start-exec'].innerHTML = data.job_start_time
-      // View.el['end-exec'].innerHTML = data.job_end_time
-      // View.el['info-exec'].innerHTML = Math.floor(timeTakenForJob / 1000) + 's'
-      View.el.version.innerHTML = data.version
-      View.el.counter.innerHTML = data.counter
-      View.el.name.innerHTML = data.job_name
-      View.el.spec.innerHTML = data.spec
+      controller.updateInfoView(data)
     }
     socket.onclose = function () {
-      Model.isClosed = true
+      Model.set('isClosed', true)
       // Reset everything and set status to disconnected
       console.info('Socket closed')
 
       View.setStatus('Disconnected')
       Model.reset()
-      controller.setData({})
-      controller.updateTimerView()
-      controller.updateProgressView()
-      controller.updateCronStatusView()
-      // Reset Model
-      // Model.data.
+      controller.updateEmptyInfoView()
     }
     return socket
   }

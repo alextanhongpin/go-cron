@@ -18,6 +18,7 @@ type Task struct {
 	JobEndTime    *time.Time `json:"job_end_time,omitempty"`
 	IsExecuting   bool       `json:"is_executing"`
 	IsRunning     bool       `json:"is_running"`
+	IsTriggered   bool       `json:"is_triggered"`
 	Version       string     `json:"version"`
 	Counter       int        `json:"counter"`
 	JobName       string     `json:"job_name"`
